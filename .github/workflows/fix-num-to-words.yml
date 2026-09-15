@@ -1,0 +1,72 @@
+name: Fix numToTamilWords
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply fix to HTML files
+        run: |
+          python3 << 'PY'
+          import pathlib, re
+
+          def fix(path):
+              p = pathlib.Path(path)
+              if not p.exists():
+                  print('skip missing', path)
+                  return False
+              text = p.read_text(encoding='utf-8')
+              old1 = """    if (n >= 100000) {
+        const lakh = Math.floor(n / 100000);
+        parts.push(getPrefix999(lakh) + (n > 0 ? ' லட்சத்து' : ' லட்சம்'));
+        n %= 100000;
+    }"""
+              new1 = """    if (n >= 100000) {
+        const lakh = Math.floor(n / 100000);
+        n %= 100000;
+        parts.push(getPrefix999(lakh) + (n > 0 ? ' லட்சத்து' : ' லட்சம்'));
+    }"""
+              old2 = """    if (n >= 1000) {
+        const thou = Math.floor(n / 1000);
+        parts.push(getPrefix999(thou) + (n > 0 ? ' ஆயிரத்து' : ' ஆயிரம்'));
+        n %= 1000;
+    }"""
+              new2 = """    if (n >= 1000) {
+        const thou = Math.floor(n / 1000);
+        n %= 1000;
+        parts.push(getPrefix999(thou) + (n > 0 ? ' ஆயிரத்து' : ' ஆயிரம்'));
+    }"""
+              if old1 not in text and old2 not in text:
+                  print(path, 'already fixed or pattern not found')
+                  return False
+              text2 = text.replace(old1, new1).replace(old2, new2)
+              p.write_text(text2, encoding='utf-8')
+              print(path, 'fixed')
+              return True
+
+          changed = False
+          for f in ['Worker_Settlement_Corrected.html', 'index.html']:
+              if fix(f):
+                  changed = True
+          if not changed:
+              print('No changes needed')
+          PY
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Worker_Settlement_Corrected.html index.html || true
+          if git diff --staged --quiet; then
+            echo "Nothing to commit"
+          else
+            git commit -m "Fix numToTamilWords: modulo before ஆயிரம்/லட்சம் suffix"
+            git push
+          fi
