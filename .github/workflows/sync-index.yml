@@ -1,0 +1,33 @@
+name: Sync index.html
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sync-index.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy fixed HTML to index.html
+        run: |
+          cp Worker_Settlement_Corrected.html index.html
+          wc -c index.html
+          grep -n "n %= 1000" index.html | head -3
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --staged --quiet; then
+            echo "No change"
+          else
+            git commit -m "Restore index.html with fixed numToTamilWords"
+            git push
+          fi
