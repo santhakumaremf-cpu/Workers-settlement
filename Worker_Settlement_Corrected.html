@@ -552,8 +552,15 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
     </div>
 
     <p style="font-size:12px; color:#555; margin:-4px 0 10px;">
-        ℹ️ Excel columns <b>header பெயர்</b> வைத்து கண்டுபிடிக்கப்படும் (order மாறினாலும் OK): Gratuity, Compensation, Closure Notice Pay, Bonus, Ex-Gratia, Net Amount Payable, <b>Bank A/c No</b>, <b>IFSC</b>, <b>Payment Date</b>. Father/Husband Name &amp; Address ஒரே cell-ல் பல வரிகளாக இருந்தாலும் (முதல் வரி = தந்தை/கணவர் பெயர், கடைசி வரி = Mobile No.) சரியாக எடுக்கும். <b>Paper Size</b> (A4 / Legal) தேர்வு செய்தால் screen preview, print அளவு, ஒவ்வொரு sheet-ன் கீழ் வரும் <b>பக்கம் எண்</b> எல்லாம் அதற்கேற்ப மாறும்.
+        ℹ️ Excel columns <b>header பெயர்</b> வைத்து கண்டுபிடிக்கப்படும் (order மாறினாலும் OK): Gratuity, Compensation, Closure Notice Pay, Bonus, Ex-Gratia, Net Amount Payable, <b>Bank A/c No</b>, <b>IFSC</b>, <b>Payment Date</b>, <b>Aadhar No</b>. Father/Husband Name &amp; Address ஒரே cell-ல் பல வரிகளாக இருந்தாலும் (முதல் வரி = தந்தை/கணவர் பெயர், கடைசி வரி = Mobile No.) சரியாக எடுக்கும். <b>Paper Size</b> (A4 / Legal) தேர்வு செய்தால் screen preview, print அளவு, ஒவ்வொரு sheet-ன் கீழ் வரும் <b>பக்கம் எண்</b> எல்லாம் அதற்கேற்ப மாறும்.
     </p>
+
+    <div class="ctrl-row">
+        <label style="font-size:14px; cursor:pointer;">
+            <input type="checkbox" id="c_showAadhar" checked onchange="saveShowAadhar()" style="width:16px; height:16px; vertical-align:middle;">
+            🪪 <b>முகவரியில் ஆதார் எண் காட்டு</b> <span style="font-size:12px; color:#555;">(Excel-ல் Aadhar No column இருந்தால் முகவரியில் வரும் — வேண்டாமென்றால் OFF செய்யவும்; Screen + Print/PDF + Word எல்லாவற்றிலும் பொருந்தும், தேர்வு auto-save)</span>
+        </label>
+    </div>
 
     <div class="edit-note">
         ✏️ <strong>Content Edit Mode:</strong> இந்த mode ON செய்தால் document-ல் உள்ள wording/content-ஐ நேரடியாக மாற்றலாம். Excel upload, employee selection, amount calculation process அதேபோல வேலை செய்யும். மாற்றிய content-ஐ நிலையாக வைத்திருக்க <strong>Content Save</strong> அழுத்தவும்.
@@ -650,6 +657,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         <div class="rep-right" style="line-height: 1.7;">
             <p><span class="words-blank" id="w_name" contenteditable="true"></span></p>
             <p><span class="words-blank" id="w_full_address" contenteditable="true"></span></p>
+            <p id="w_aadhar_row" style="margin-top: 4px;">
+                <span id="w_aadhar_label"></span> <span class="words-blank" id="w_aadhar" contenteditable="true"></span>
+            </p>
             <p style="margin-top: 4px;">
                 <span id="w_phone_label"></span> <span class="words-blank" id="w_phone" contenteditable="true"></span>
             </p>
@@ -902,6 +912,24 @@ function loadCommonDetails() {
         if (!raw) return;
         const d = JSON.parse(raw);
         COMMON_FIELDS.forEach(f => { const el = document.getElementById('c_' + f); if (el && d[f]) el.value = d[f]; });
+    } catch (e) {}
+}
+
+// ---- Show/Hide Aadhaar No in worker address (screen + print + Word), choice auto-saved ----
+const AADHAR_STORAGE_KEY = 'workerSettlementShowAadhar_v1';
+function isAadharShown() {
+    const el = document.getElementById('c_showAadhar');
+    return el ? el.checked : true;
+}
+function saveShowAadhar() {
+    try { localStorage.setItem(AADHAR_STORAGE_KEY, isAadharShown() ? '1' : '0'); } catch (e) {}
+    if (workers.length) selectWorker(currentIdx);   // re-render instantly
+}
+function loadShowAadhar() {
+    try {
+        const v = localStorage.getItem(AADHAR_STORAGE_KEY);
+        const el = document.getElementById('c_showAadhar');
+        if (el) el.checked = (v === null || v === undefined) ? true : (v === '1');
     } catch (e) {}
 }
 
@@ -2045,6 +2073,7 @@ function loadExcel() {
             name:         findCol([/^name$/, /^(emp(loyee)?|worker)\.?\s*name/], 2),
             fa:           findCol([/father|husband|address/], 3),
             phone:        findCol([/mobile|phone|cell\s*no/], -1),
+            aadhar:       findCol([/aadha?ar|uidai/], -1),
             gratuity:     findCol([/gratu/], 20),
             compensation: findCol([/compen/], 21),
             notice:       findCol([/notice/], 22),
@@ -2176,6 +2205,7 @@ function loadExcel() {
                 father: father,
                 addressLines: addressLines,
                 phone: phoneFromExcel,
+                aadhar: cellText(i, COL.aadhar),
                 gratuity: getNum(r, COL.gratuity),
                 compensation: getNum(r, COL.compensation),
                 noticePay: getNum(r, COL.notice),
@@ -2232,7 +2262,7 @@ function loadExcel() {
         const nW = workers.length;
         const cnt = (k) => workers.filter(w => w[k]).length;
         let msg = nW + ' தொழிலாளர்கள் ஏற்றப்பட்டனர்!';
-        msg += '\nBank A/c No: ' + cnt('bankAc') + '/' + nW + '  |  IFSC: ' + cnt('ifsc') + '/' + nW + '  |  Payment Date: ' + cnt('payDate') + '/' + nW;
+        msg += '\nBank A/c No: ' + cnt('bankAc') + '/' + nW + '  |  IFSC: ' + cnt('ifsc') + '/' + nW + '  |  Payment Date: ' + cnt('payDate') + '/' + nW + '  |  Aadhar: ' + cnt('aadhar') + '/' + nW;
         if (missingCols.length) msg += '\n⚠️ Excel-ல் இந்த columns கிடைக்கவில்லை: ' + missingCols.join(', ');
         alert(msg);
     };
@@ -2276,6 +2306,10 @@ function selectWorker(idx) {
     }
     if (document.getElementById('w_phone_label')) document.getElementById('w_phone_label').textContent = w.phone ? 'கைபேசி எண் :' : '';
     if (document.getElementById('w_phone')) document.getElementById('w_phone').textContent = w.phone || '';
+    const showAd = isAadharShown() && !!w.aadhar;
+    if (document.getElementById('w_aadhar_row')) document.getElementById('w_aadhar_row').style.display = showAd ? '' : 'none';
+    if (document.getElementById('w_aadhar_label')) document.getElementById('w_aadhar_label').textContent = showAd ? 'ஆதார் எண் :' : '';
+    if (document.getElementById('w_aadhar')) document.getElementById('w_aadhar').textContent = showAd ? w.aadhar : '';
 
     // Agreement terms - Dynamic Row Hiding and Automatic Alphabet Alteration
     // NOTE: Match exact HTML ID row_exgratia (lowercase g)
@@ -2466,6 +2500,7 @@ document.addEventListener('DOMContentLoaded', function() {
     prepareTemplateEditableElements();
     loadTemplateContent(true);
     loadCommonDetails();
+    loadShowAadhar();
     loadNameFixes();
     loadPaperSize();
 });
