@@ -2,58 +2,49 @@
 <html lang="ta">
 <head>
 <meta charset="UTF-8">
-<title>Worker Settlement</title>
+<title>Worker Settlement - Loading…</title>
 <style>
 body{font-family:Latha,Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#e8e8e8;color:#333}
 .box{text-align:center;padding:24px}
 </style>
 </head>
 <body>
-<div class="box" id="box"><p>Loading multi-sheet app…</p></div>
+<div class="box" id="box"><p>Loading Worker Settlement…</p></div>
+<script src="ms_p0.js"></script>
+<script src="ms_p1.js"></script>
+<script src="ms_p2.js"></script>
 <script>
 (async function () {
   const box = document.getElementById('box');
+  const B64 = (window.__MS0||'') + (window.__MS1||'') + (window.__MS2||'');
+  if (!B64) { box.innerHTML = '<p style="color:red">Payload missing</p>'; return; }
+  function b64ToU8(b64) {
+    const bin = atob(b64);
+    const u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return u8;
+  }
   try {
-    const res = await fetch('Worker_Settlement_Corrected.html', { cache: 'no-store' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    let html = await res.text();
-
-    // 1) Globals
-    html = html.replace(
-      'let workers = [];\nlet currentIdx = 0;',
-      "let workers = [];\nlet currentIdx = 0;\nlet workbook = null;\nlet currentSheetName = '';\nlet __excelU8 = null;"
-    );
-
-    // 2) Sheet dropdown next to Excel button
-    html = html.replace(
-      '<button class="btn btn-primary" onclick="loadExcel()">📂 Excel ஏற்றுக</button>',
-      '<button class="btn btn-primary" onclick="loadExcel()">📂 Excel ஏற்றுக</button>\n' +
-      '        <label id="sheetSelectLabel" style="display:none;margin-left:8px;">📑 Sheet:</label>\n' +
-      '        <select id="sheetSelect" onchange="onSheetChange()" style="display:none;min-width:160px;padding:6px 8px;border-radius:6px;border:1px solid #ccc;"></select>'
-    );
-
-    // 3) Save ArrayBuffer + multi-sheet selection when Excel is read
-    html = html.replace(
-      'const data = new Uint8Array(e.target.result);\n        const wb = XLSX.read(data, { type: \'array\' });',
-      'const data = new Uint8Array(e.target.result);\n        __excelU8 = data;\n        const wb = XLSX.read(data, { type: \'array\' });\n        workbook = wb;\n        (function fillSheetDropdown(){\n          const sheetSel = document.getElementById(\'sheetSelect\');\n          const sheetLbl = document.getElementById(\'sheetSelectLabel\');\n          if (!sheetSel) return;\n          sheetSel.innerHTML = \'\';\n          (wb.SheetNames || []).forEach(function(sn){\n            const opt = document.createElement(\'option\');\n            opt.value = sn; opt.textContent = sn;\n            sheetSel.appendChild(opt);\n          });\n          if ((wb.SheetNames || []).length > 1) {\n            sheetSel.style.display = \'\';\n            if (sheetLbl) sheetLbl.style.display = \'\';\n          } else {\n            sheetSel.style.display = \'none\';\n            if (sheetLbl) sheetLbl.style.display = \'none\';\n          }\n        })();'
-    );
-
-    // 4) Prefer selected sheet (or first header-like sheet)
-    html = html.replace(
-      'let sheetName = wb.SheetNames[0];\n        for (const sn of wb.SheetNames) {\n            const rws = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1 }).slice(0, 25);\n            if (rws.some(rw => looksLikeHeaderRow((rw || []).map(c => String(c === undefined || c === null ? \'\' : c).trim().toLowerCase())))) { sheetName = sn; break; }\n        }\n        const sheet = wb.Sheets[sheetName];',
-      'let sheetName = (document.getElementById(\'sheetSelect\') && document.getElementById(\'sheetSelect\').value) || wb.SheetNames[0];\n        if (!(document.getElementById(\'sheetSelect\') && document.getElementById(\'sheetSelect\').value)) {\n          for (const sn of wb.SheetNames) {\n            const rws = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1 }).slice(0, 25);\n            if (rws.some(rw => looksLikeHeaderRow((rw || []).map(c => String(c === undefined || c === null ? \'\' : c).trim().toLowerCase())))) { sheetName = sn; break; }\n          }\n        }\n        const _ss = document.getElementById(\'sheetSelect\');\n        if (_ss) _ss.value = sheetName;\n        currentSheetName = sheetName;\n        const sheet = wb.Sheets[sheetName];'
-    );
-
-    // 5) onSheetChange: re-run loadExcel reader.onload with saved bytes (no re-upload)
-    const extra = `\n<script>\nfunction onSheetChange(){\n  var sn = document.getElementById('sheetSelect') && document.getElementById('sheetSelect').value;\n  if (!sn || !__excelU8) { alert('முதலில் Excel ஏற்றவும்'); return; }\n  currentSheetName = sn;\n  // Re-fire the same onload path as loadExcel by synthesizing FileReader result\n  try {\n    var fileInput = document.getElementById('excelFile');\n    if (!fileInput || !fileInput.files || !fileInput.files[0]) {\n      // No File object - manually invoke parse by re-reading stored u8 through a fake loadExcel path\n      // Trigger by temporarily replacing SheetNames order so preferred is first, then call loadExcel logic\n    }\n    // Always: set dropdown value then call internal reparse\n    window.__forceSheet = sn;\n    // Rebuild workers by re-calling XLSX path - invoke loadExcel's onload with stored buffer\n    var ev = { target: { result: __excelU8.buffer.slice(__excelU8.byteOffset, __excelU8.byteOffset + __excelU8.byteLength) } };\n    // Find and call by re-running loadExcel after marking force sheet\n    // Simpler reliable method: dispatch a custom event that patched loadExcel listens for - use direct approach:\n    if (typeof window.__reparseExcel === 'function') { window.__reparseExcel(sn); return; }\n    // Fallback: re-click load with same file (File still in input)\n    if (fileInput && fileInput.files && fileInput.files[0]) {\n      loadExcel();\n    } else {\n      alert('Sheet தேர்வு செய்யப்பட்டது. Print/Export-க்கு Excel-ஐ மீண்டும் ஏற்றவும்.');\n    }\n  } catch (err) {\n    console.error(err);\n    alert('Sheet மாற்ற முடியவில்லை: ' + err.message);\n  }\n}\n// Prefer forced sheet on next parse\n(function(){\n  var _orig;\n  // After page scripts run, wrap is hard; force via session flag in sheetName assignment already handles dropdown value\n})();\n<\/script>`;
-
-    html = html.replace('</body>', extra + '\n</body>');
-
+    const u8 = b64ToU8(B64);
+    let html;
+    if (typeof DecompressionStream !== 'undefined') {
+      const ds = new DecompressionStream('gzip');
+      const stream = new Blob([u8]).stream().pipeThrough(ds);
+      html = await new Response(stream).text();
+    } else {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+      html = pako.ungzip(u8, { to: 'string' });
+    }
     document.open();
     document.write(html);
     document.close();
   } catch (e) {
-    box.innerHTML = '<p style="color:#c0392b">Load failed: ' + e.message + '</p>' +
+    box.innerHTML = '<p style="color:red">Load failed: ' + e.message + '</p>' +
       '<p><a href="Worker_Settlement_Corrected.html">Open classic version</a></p>';
     console.error(e);
   }
