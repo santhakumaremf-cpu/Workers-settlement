@@ -11,11 +11,14 @@ Excel data எங்கும் upload ஆகாது (privacy safe).
 https://<username>.github.io/<repo-name>/
 ```
 
+Also: https://workers-settlement.vercel.app
+
 ## ✨ Features
 
 | | |
 |---|---|
 | 📂 Excel upload | Header-பெயர் வைத்து columns கண்டுபிடிக்கும் (order மாறினாலும் OK); multi-line Father/Husband & Address cell support |
+| 📑 **Multi-sheet Excel** | Excel-ல் பல sheets இருந்தால் **Sheet dropdown**-ல் ஒவ்வொன்றையும் தனித்தனியாக select செய்து print / export செய்யலாம் |
 | 🔤 English → Tamil | பெயர்/ஊர் automatic transliteration (~2000-word dictionary) + ✏️ user-editable பெயர் திருத்தங்கள் |
 | 🖨️ Print / PDF | A4 / Legal / Letter; ஒவ்வொரு sheet-லும் "பக்கம் N / மொத்தம்" |
 | 📝 Word export | இந்த தொழிலாளி (.docx) அல்லது எல்லோருக்கும் ஒரே ZIP |
@@ -41,27 +44,26 @@ https://<username>.github.io/<repo-name>/
 
 அடுத்த முறை `index.html` மாற்றி push செய்தால் தானாக update ஆகும்.
 
-> Git இல்லாமல்: GitHub repo page → **Add file → Upload files** → இந்த folder-ல் உள்ள எல்லா files-ஐயும் drag & drop → Commit. (`.github/workflows/deploy.yml`, `.nojekyll` உட்பட.)
+> Git இல்லாமல்: GitHub repo page → **Add file → Upload files** → இந்த folder-ல் உள்ள எல்லா files-ஐயும் drag & drop → Commit.
 
 ## 🖥️ Local use
 
-`index.html`-ஐ double-click செய்தாலே இயங்கும் (Chrome / Edge 131+ recommended — page number footer-க்கு).
+`index.html`-ஐ double-click செய்தாலே இயங்கும் (Chrome / Edge 131+ recommended).
+
+Currently `index.html` redirects to `Worker_Settlement_Corrected.html`. Multi-sheet version file is ready — upload as `index.html` via GitHub web UI (file ~1 MB with offline XLSX, or ~260 KB with CDN XLSX).
 
 ## 📁 Files
 
 ```
-index.html                       ← the whole app
-.github/workflows/deploy.yml     ← auto-deploy to GitHub Pages
-.nojekyll                        ← serve files as-is
+index.html                       ← app entry
+Worker_Settlement_Corrected.html ← full offline app
+.github/workflows/deploy.yml
+.nojekyll
 samples/
-  Sample_Worker_Settlement_Data.xlsx   sample Excel (app-ல் Download button-லும் உள்ளது)
-  Test_Real_Layout.xlsx                real layout test file
-  Sample_Print_A4.pdf / _Legal.pdf     PDF output samples
-  Sample_Word_*.docx                   Word output samples
 ```
 
 ## ⚠️ Notes
 
-- Settings (பொது விவரங்கள், பெயர் திருத்தங்கள், Content Edit, Paper Size) browser-ன் localStorage-ல் சேமிக்கப்படும் — அதே browser-ல் மட்டும். வேறு computer-க்கு **⚙️ Settings Backup → 📤 Restore** பயன்படுத்தவும்.
-- Print dialog: **Paper size** = app-ல் தேர்ந்தெடுத்த அதே size, **Margins** = Default.
-- Word file font = Latha (Windows default Tamil font).
+- Settings browser localStorage-ல் சேமிக்கப்படும்.
+- Print: Paper size = app selection, Margins = Default.
+- Word font = Latha.
