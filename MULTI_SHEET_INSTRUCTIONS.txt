@@ -1,0 +1,18 @@
+Multi-sheet Excel support
+========================
+
+GitHub API limits prevent pushing the full 1MB index.html from this agent.
+
+To enable multi-sheet (select each Excel sheet separately for print/export):
+
+1. Download index_multi_sheet.html from the chat artifacts (or build from source).
+2. GitHub repo -> index.html -> Replace file (upload) -> Commit.
+
+OR open the local file index_multi_sheet.html in Chrome/Edge (works offline).
+
+Current index.html is a loader that tries to inject multi-sheet into Worker_Settlement_Corrected.html.
+
+Features when multi-sheet is active:
+- Sheet dropdown appears when Excel has 2+ sheets
+- Select sheet -> workers from that sheet only
+- Print / Word export for that sheet
