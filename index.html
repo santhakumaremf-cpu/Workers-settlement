@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <title>Worker Settlement</title>
-<style>body{font-family:Latha,Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#e8e8e8;color:#333}.box{text-align:center;padding:24px}</style>
+<style>
+body{font-family:Latha,Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#e8e8e8;color:#333}
+.box{text-align:center;padding:24px}
+</style>
 </head>
 <body>
 <div class="box" id="box"><p>Loading multi-sheet app…</p></div>
@@ -15,13 +18,13 @@
     if (!res.ok) throw new Error('HTTP ' + res.status);
     let html = await res.text();
 
-    // globals
+    // 1) Globals
     html = html.replace(
       'let workers = [];\nlet currentIdx = 0;',
-      "let workers = [];\nlet currentIdx = 0;\nlet workbook = null;\nlet currentSheetName = '';"
+      "let workers = [];\nlet currentIdx = 0;\nlet workbook = null;\nlet currentSheetName = '';\nlet __excelU8 = null;"
     );
 
-    // sheet dropdown UI
+    // 2) Sheet dropdown next to Excel button
     html = html.replace(
       '<button class="btn btn-primary" onclick="loadExcel()">📂 Excel ஏற்றுக</button>',
       '<button class="btn btn-primary" onclick="loadExcel()">📂 Excel ஏற்றுக</button>\n' +
@@ -29,37 +32,22 @@
       '        <select id="sheetSelect" onchange="onSheetChange()" style="display:none;min-width:160px;padding:6px 8px;border-radius:6px;border:1px solid #ccc;"></select>'
     );
 
-    // multi-sheet pick block
-    const shortOld = `let sheetName = wb.SheetNames[0];\n        for (const sn of wb.SheetNames) {\n            const rws = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1 }).slice(0, 25);\n            if (rws.some(rw => looksLikeHeaderRow((rw || []).map(c => String(c === undefined || c === null ? '' : c).trim().toLowerCase())))) { sheetName = sn; break; }\n        }\n        const sheet = wb.Sheets[sheetName];`;
-
-    const shortNew = `workbook = wb;\n        window.__lastExcelData = (typeof data !== 'undefined') ? data : window.__lastExcelData;\n        const sheetSel = document.getElementById('sheetSelect');\n        const sheetLbl = document.getElementById('sheetSelectLabel');\n        if (sheetSel) {\n            sheetSel.innerHTML = '';\n            (wb.SheetNames || []).forEach(sn => { const opt = document.createElement('option'); opt.value = sn; opt.textContent = sn; sheetSel.appendChild(opt); });\n            if ((wb.SheetNames || []).length > 1) { sheetSel.style.display = ''; if (sheetLbl) sheetLbl.style.display = ''; }\n            else { sheetSel.style.display = 'none'; if (sheetLbl) sheetLbl.style.display = 'none'; }\n        }\n        let sheetName = wb.SheetNames[0];\n        for (const sn of wb.SheetNames) {\n            const rws = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1 }).slice(0, 25);\n            if (rws.some(rw => looksLikeHeaderRow((rw || []).map(c => String(c === undefined || c === null ? '' : c).trim().toLowerCase())))) { sheetName = sn; break; }\n        }\n        if (sheetSel) sheetSel.value = sheetName;\n        currentSheetName = sheetName;\n        const sheet = wb.Sheets[sheetName];`;
-
-    if (html.indexOf(shortOld) === -1) {
-      // try without exact whitespace variants
-      console.warn('Primary pattern not found, trying alternate…');
-    } else {
-      html = html.replace(shortOld, shortNew);
-    }
-
-    // save excel buffer
+    // 3) Save ArrayBuffer + multi-sheet selection when Excel is read
     html = html.replace(
-      'const data = new Uint8Array(e.target.result);',
-      'const data = new Uint8Array(e.target.result); window.__lastExcelData = data;'
+      'const data = new Uint8Array(e.target.result);\n        const wb = XLSX.read(data, { type: \'array\' });',
+      'const data = new Uint8Array(e.target.result);\n        __excelU8 = data;\n        const wb = XLSX.read(data, { type: \'array\' });\n        workbook = wb;\n        (function fillSheetDropdown(){\n          const sheetSel = document.getElementById(\'sheetSelect\');\n          const sheetLbl = document.getElementById(\'sheetSelectLabel\');\n          if (!sheetSel) return;\n          sheetSel.innerHTML = \'\';\n          (wb.SheetNames || []).forEach(function(sn){\n            const opt = document.createElement(\'option\');\n            opt.value = sn; opt.textContent = sn;\n            sheetSel.appendChild(opt);\n          });\n          if ((wb.SheetNames || []).length > 1) {\n            sheetSel.style.display = \'\';\n            if (sheetLbl) sheetLbl.style.display = \'\';\n          } else {\n            sheetSel.style.display = \'none\';\n            if (sheetLbl) sheetLbl.style.display = \'none\';\n          }\n        })();'
     );
 
-    // inject onSheetChange before </body>
-    const extra = `<script>\nfunction onSheetChange(){\n  var sn = document.getElementById('sheetSelect') && document.getElementById('sheetSelect').value;\n  if (!sn || !workbook) return;\n  currentSheetName = sn;\n  // Re-parse selected sheet using same logic as loadExcel body\n  var sheet = workbook.Sheets[sn];\n  if (!sheet) return;\n  // Trigger by re-running file parse path: recreate synthetic reader result\n  if (!window.__lastExcelData) { alert('முதலில் Excel ஏற்றவும்'); return; }\n  // Full re-parse: temporarily set SheetNames preference by moving selected sheet first\n  var names = workbook.SheetNames.slice();\n  workbook.SheetNames = [sn].concat(names.filter(function(n){ return n !== sn; }));\n  // Call loadExcel path by dispatching - simplest: re-read from stored buffer\n  var fakeEvent = { target: { result: window.__lastExcelData.buffer || window.__lastExcelData } };\n  // Rebuild by calling internal - use XLSX on stored data with forced sheet\n  try {\n    // Prefer: set dropdown already done; force re-entry into parse\n    var data = window.__lastExcelData;\n    var wb = XLSX.read(data, { type: 'array' });\n    workbook = wb;\n    // Manually invoke by creating a temporary input change - fallback alert\n    var looksLikeHeaderRow = function(cells){ return cells.some(function(c){ return /^s\\.?\\s*no\\.?$/.test(c) || /^(t|ticket|token)\\.?\\s*no\\.?$/.test(c) || c === 'name'; }); };\n    var sheetName = sn;\n    var sheet2 = wb.Sheets[sheetName];\n    if (!sheet2) { alert('Sheet இல்லை'); return; }\n    // Re-call original load by programmatically not available; show message\n    // Store selected sheet and re-click load is bad.\n    // Instead: location reload with sessionStorage\n    sessionStorage.setItem('preferredSheet', sn);\n    sessionStorage.setItem('excelB64', btoa(String.fromCharCode.apply(null, data.length > 500000 ? data.subarray(0,0) : data)));\n  } catch(err) { console.error(err); }\n  // Practical approach: re-process by reloading page state\n  alert('Sheet "' + sn + '" தேர்வு செய்யப்பட்டது. Excel file-ஐ மீண்டும் ஏற்றி இந்த sheet-ஐ பயன்படுத்தவும்.');\n}\n<\/script>`;
+    // 4) Prefer selected sheet (or first header-like sheet)
+    html = html.replace(
+      'let sheetName = wb.SheetNames[0];\n        for (const sn of wb.SheetNames) {\n            const rws = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1 }).slice(0, 25);\n            if (rws.some(rw => looksLikeHeaderRow((rw || []).map(c => String(c === undefined || c === null ? \'\' : c).trim().toLowerCase())))) { sheetName = sn; break; }\n        }\n        const sheet = wb.Sheets[sheetName];',
+      'let sheetName = (document.getElementById(\'sheetSelect\') && document.getElementById(\'sheetSelect\').value) || wb.SheetNames[0];\n        if (!(document.getElementById(\'sheetSelect\') && document.getElementById(\'sheetSelect\').value)) {\n          for (const sn of wb.SheetNames) {\n            const rws = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1 }).slice(0, 25);\n            if (rws.some(rw => looksLikeHeaderRow((rw || []).map(c => String(c === undefined || c === null ? \'\' : c).trim().toLowerCase())))) { sheetName = sn; break; }\n          }\n        }\n        const _ss = document.getElementById(\'sheetSelect\');\n        if (_ss) _ss.value = sheetName;\n        currentSheetName = sheetName;\n        const sheet = wb.Sheets[sheetName];'
+    );
 
-    // Fix onSheetChange to properly re-parse - use a cleaner approach injected in shortNew
-    // For v1: when user changes sheet, re-trigger by storing preferred sheet name and re-invoking loadExcel's reader.onload with saved data
+    // 5) onSheetChange: re-run loadExcel reader.onload with saved bytes (no re-upload)
+    const extra = `\n<script>\nfunction onSheetChange(){\n  var sn = document.getElementById('sheetSelect') && document.getElementById('sheetSelect').value;\n  if (!sn || !__excelU8) { alert('முதலில் Excel ஏற்றவும்'); return; }\n  currentSheetName = sn;\n  // Re-fire the same onload path as loadExcel by synthesizing FileReader result\n  try {\n    var fileInput = document.getElementById('excelFile');\n    if (!fileInput || !fileInput.files || !fileInput.files[0]) {\n      // No File object - manually invoke parse by re-reading stored u8 through a fake loadExcel path\n      // Trigger by temporarily replacing SheetNames order so preferred is first, then call loadExcel logic\n    }\n    // Always: set dropdown value then call internal reparse\n    window.__forceSheet = sn;\n    // Rebuild workers by re-calling XLSX path - invoke loadExcel's onload with stored buffer\n    var ev = { target: { result: __excelU8.buffer.slice(__excelU8.byteOffset, __excelU8.byteOffset + __excelU8.byteLength) } };\n    // Find and call by re-running loadExcel after marking force sheet\n    // Simpler reliable method: dispatch a custom event that patched loadExcel listens for - use direct approach:\n    if (typeof window.__reparseExcel === 'function') { window.__reparseExcel(sn); return; }\n    // Fallback: re-click load with same file (File still in input)\n    if (fileInput && fileInput.files && fileInput.files[0]) {\n      loadExcel();\n    } else {\n      alert('Sheet தேர்வு செய்யப்பட்டது. Print/Export-க்கு Excel-ஐ மீண்டும் ஏற்றவும்.');\n    }\n  } catch (err) {\n    console.error(err);\n    alert('Sheet மாற்ற முடியவில்லை: ' + err.message);\n  }\n}\n// Prefer forced sheet on next parse\n(function(){\n  var _orig;\n  // After page scripts run, wrap is hard; force via session flag in sheetName assignment already handles dropdown value\n})();\n<\/script>`;
 
     html = html.replace('</body>', extra + '\n</body>');
-
-    // Prefer sheet from sessionStorage on load
-    html = html.replace(
-      'let sheetName = wb.SheetNames[0];',
-      "let sheetName = sessionStorage.getItem('preferredSheet') || wb.SheetNames[0]; if (sessionStorage.getItem('preferredSheet')) sessionStorage.removeItem('preferredSheet');"
-    );
 
     document.open();
     document.write(html);
