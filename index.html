@@ -2,53 +2,12 @@
 <html lang="ta">
 <head>
 <meta charset="UTF-8">
-<title>Worker Settlement - Loading…</title>
-<style>
-body{font-family:Latha,Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#e8e8e8;color:#333}
-.box{text-align:center;padding:24px}
-</style>
+<meta http-equiv="refresh" content="0;url=Worker_Settlement_Corrected.html">
+<title>Worker Settlement</title>
+<script>location.replace('Worker_Settlement_Corrected.html');</script>
 </head>
 <body>
-<div class="box" id="box"><p>Loading Worker Settlement…</p></div>
-<script src="ms_p0.js"></script>
-<script src="ms_p1.js"></script>
-<script src="ms_p2.js"></script>
-<script>
-(async function () {
-  const box = document.getElementById('box');
-  const B64 = (window.__MS0||'') + (window.__MS1||'') + (window.__MS2||'');
-  if (!B64) { box.innerHTML = '<p style="color:red">Payload missing</p>'; return; }
-  function b64ToU8(b64) {
-    const bin = atob(b64);
-    const u8 = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-    return u8;
-  }
-  try {
-    const u8 = b64ToU8(B64);
-    let html;
-    if (typeof DecompressionStream !== 'undefined') {
-      const ds = new DecompressionStream('gzip');
-      const stream = new Blob([u8]).stream().pipeThrough(ds);
-      html = await new Response(stream).text();
-    } else {
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js';
-        s.onload = resolve; s.onerror = reject;
-        document.head.appendChild(s);
-      });
-      html = pako.ungzip(u8, { to: 'string' });
-    }
-    document.open();
-    document.write(html);
-    document.close();
-  } catch (e) {
-    box.innerHTML = '<p style="color:red">Load failed: ' + e.message + '</p>' +
-      '<p><a href="Worker_Settlement_Corrected.html">Open classic version</a></p>';
-    console.error(e);
-  }
-})();
-</script>
+<p>Opening <a href="Worker_Settlement_Corrected.html">Worker Settlement</a>…</p>
+<p style="margin-top:24px;font-size:14px;color:#555;">Multi-sheet version: download <code>index_multi_sheet.html</code> from artifacts and replace this file on GitHub.</p>
 </body>
 </html>
