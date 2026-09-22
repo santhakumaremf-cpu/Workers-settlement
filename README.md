@@ -26,6 +26,15 @@ Also: https://workers-settlement.vercel.app
 | ✏️ Content Edit Mode | Document wording-ஐ நேரடியாக மாற்றி Save |
 | ⚙️ Settings Backup / Restore | Settings-ஐ .json-ஆக எடுத்து வேறு computer-ல் Restore |
 
+## 📄 Document content (synced from Web-workers-settlement)
+
+Latest agreement + receipt wording is in:
+
+- **`document-template-from-web.html`**
+
+This matches the document used in the React app (`Web-workers-settlement`).
+Copy the HTML inside the two `<div class="a4-page">` blocks into `Worker_Settlement_Corrected.html` if you want the main offline file updated too.
+
 ## 🚀 Deploy to GitHub Pages (one time)
 
 1. GitHub-ல் **New repository** (எ.கா. `worker-settlement`) — Public.
@@ -55,9 +64,10 @@ Currently `index.html` redirects to `Worker_Settlement_Corrected.html`. Multi-sh
 ## 📁 Files
 
 ```
-index.html                       ← app entry
-Worker_Settlement_Corrected.html ← full offline app
-.github/workflows/deploy.yml
+index.html                          ← app entry
+Worker_Settlement_Corrected.html    ← full offline app
+document-template-from-web.html     ← latest agreement + receipt (from Web-workers-settlement)
+.github/workflows/
 .nojekyll
 samples/
 ```
