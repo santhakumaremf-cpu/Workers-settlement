@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: workers-settlement
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: .

@@ -55,6 +55,18 @@ Copy the HTML inside the two `<div class="a4-page">` blocks into `Worker_Settlem
 
 > Git இல்லாமல்: GitHub repo page → **Add file → Upload files** → இந்த folder-ல் உள்ள எல்லா files-ஐயும் drag & drop → Commit.
 
+## 🚀 Deploy to Render
+
+இந்த project static HTML app; build command, Node server, database தேவையில்லை. Root-ல் உள்ள `render.yaml` Render Static Site-ஐ configure செய்கிறது.
+
+1. `render.yaml` உட்பட latest files-ஐ GitHub-ல் push செய்யவும்.
+2. Render Dashboard → **New + → Blueprint** சென்று `santhakumaremf-cpu/Workers-settlement` repo-வை connect செய்யவும்.
+3. சரியான branch-ஐ தேர்வு செய்து Blueprint-ஐ apply செய்யவும். Render root directory-யை static site-ஆக publish செய்யும்.
+
+Manual setup என்றால் **New + → Static Site** தேர்வு செய்து: **Root Directory** blank, **Build Command** blank, **Publish Directory** `.` என்று அமைக்கவும்.
+
+> Render log-ல் `Web-workers-settlement` என்று வந்தால் அது வேறு repository. இந்த `render.yaml` `Workers-settlement`-க்கு மட்டுமே பொருந்தும்.
+
 ## 🖥️ Local use
 
 `index.html`-ஐ double-click செய்தாலே இயங்கும் (Chrome / Edge 131+ recommended).
