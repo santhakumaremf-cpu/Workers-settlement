@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: workers-settlement-sync-api
+    runtime: node
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    disk:
+      name: workers-settlement-template-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: TEMPLATE_SYNC_PASSWORD
+        generateValue: true
+      - key: TEMPLATE_STORE_PATH
+        value: /var/data/template-content.json
+      - key: ALLOWED_ORIGINS
+        value: https://workers-settlement-zdku.onrender.com

@@ -2,8 +2,7 @@
 
 Excel upload → ஒவ்வொரு தொழிலாளிக்கும் தமிழ் ஒப்பந்தம் (ID Act 1947, Sec 18(1)) + சர்வ அடக்க ரசீது → **PDF / Word (.docx)**.
 
-Single-file web app (`index.html`). Server இல்லை, database இல்லை — browser-ல் மட்டுமே இயங்கும்.
-Excel data எங்கும் upload ஆகாது (privacy safe).
+Document generator ஒரு single-file browser app (`Worker_Settlement_Corrected.html`). Excel data browser-லேயே process ஆகும்; worker/Excel data server-க்கு அனுப்பப்படாது. Render-ல் உள்ள சிறிய sync API, Content Edit Mode-ல் Save செய்த template wording-ஐ மட்டும் பல device-களுக்காக சேமிக்கும்.
 
 ## 🌐 Live (GitHub Pages)
 
@@ -55,21 +54,27 @@ Copy the HTML inside the two `<div class="a4-page">` blocks into `Worker_Settlem
 
 > Git இல்லாமல்: GitHub repo page → **Add file → Upload files** → இந்த folder-ல் உள்ள எல்லா files-ஐயும் drag & drop → Commit.
 
-## 🚀 Deploy to Render
+## 🚀 Render: Content cloud sync
 
-இந்த project static HTML app; build command, Node server, database தேவையில்லை. Root-ல் உள்ள `render.yaml` Render Static Site-ஐ configure செய்கிறது.
+The app can run as a static site, but a static site cannot store shared changes. `Content Save` now saves the edited template to a small API service; `Saved Content Load` reads that shared template on any device. Excel worker data is **not** sent to the API. Anyone with the public app link can load the shared wording; only someone with the Render sync password can save or reset it.
 
-1. `render.yaml` உட்பட latest files-ஐ GitHub-ல் push செய்யவும்.
-2. Render Dashboard → **New + → Blueprint** சென்று `santhakumaremf-cpu/Workers-settlement` repo-வை connect செய்யவும்.
-3. சரியான branch-ஐ தேர்வு செய்து Blueprint-ஐ apply செய்யவும். Render root directory-யை static site-ஆக publish செய்யும்.
+### Existing Static Site
 
-Manual setup என்றால் **New + → Static Site** தேர்வு செய்து: **Root Directory** blank, **Build Command** blank, **Publish Directory** `.` என்று அமைக்கவும்.
+Keep the existing Static Site and its URL. Make sure it deploys this repository and the branch containing the latest `Worker_Settlement_Corrected.html` changes, with **Publish Directory** `.`. `render.yaml` describes the Static Site; `render-api.yaml` describes the separate API service.
 
-> Render log-ல் `Web-workers-settlement` என்று வந்தால் அது வேறு repository. இந்த `render.yaml` `Workers-settlement`-க்கு மட்டுமே பொருந்தும்.
+### Create the sync API
+
+1. Push the latest repo changes to GitHub.
+2. Render Dashboard → **New + → Blueprint**; select `santhakumaremf-cpu/Workers-settlement` and the branch containing these changes.
+3. Set **Blueprint path** to `render-api.yaml` (keep `render.yaml` for the existing Static Site), then apply it. This creates the `workers-settlement-sync-api` Node service and a 1 GB persistent disk. Render's `starter` service/disk may incur charges.
+4. In the new API service, open **Environment** and reveal/copy `TEMPLATE_SYNC_PASSWORD`. Keep it private. The app asks for it when saving or resetting the shared template.
+5. The front end expects `https://workers-settlement-sync-api.onrender.com`. If Render shows a different API URL, update `TEMPLATE_CLOUD_API_URL` in `Worker_Settlement_Corrected.html` to that URL plus `/api/template`, then redeploy the Static Site.
+
+If the app's domain changes, update `ALLOWED_ORIGINS` on the API service to the app's exact origin (for example, `https://workers-settlement-zdku.onrender.com`).
 
 ## 🖥️ Local use
 
-`index.html`-ஐ double-click செய்தாலே இயங்கும் (Chrome / Edge 131+ recommended).
+`index.html`-ஐ double-click செய்தாலே இயங்கும் (Chrome / Edge 131+ recommended). Local/file use அல்லது GitHub Pages-ல் Content Save அந்த browser/device-ல் மட்டும் இருக்கும்; எல்லா device-களுக்கான cloud sync-க்கு Render app + sync API தேவை.
 
 Currently `index.html` redirects to `Worker_Settlement_Corrected.html`. Multi-sheet version file is ready — upload as `index.html` via GitHub web UI (file ~1 MB with offline XLSX, or ~260 KB with CDN XLSX).
 
@@ -77,8 +82,12 @@ Currently `index.html` redirects to `Worker_Settlement_Corrected.html`. Multi-sh
 
 ```
 index.html                          ← app entry
-Worker_Settlement_Corrected.html    ← full offline app
+Worker_Settlement_Corrected.html    ← full browser app
 document-template-from-web.html     ← latest agreement + receipt (from Web-workers-settlement)
+server.mjs                          ← Render shared-template API
+render.yaml                         ← Render Static Site Blueprint
+render-api.yaml                    ← Render API service + persistent disk
+package.json / package-lock.json   ← minimal Node runtime metadata
 .github/workflows/
 .nojekyll
 samples/
@@ -86,6 +95,8 @@ samples/
 
 ## ⚠️ Notes
 
-- Settings browser localStorage-ல் சேமிக்கப்படும்.
+- Shared edited template wording Render persistent disk-ல் சேமிக்கப்படும்; cloud save/reset-க்கு `TEMPLATE_SYNC_PASSWORD` தேவை.
+- Common details, name fixes, paper size போன்ற பிற settings browser localStorage-ல் இருக்கும்; அவை தானாக device-கள் இடையே sync ஆகாது.
+- Excel worker data API-க்கு அனுப்பப்படாது.
 - Print: Paper size = app selection, Margins = Default.
 - Word font = Latha.

@@ -534,6 +534,7 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
         <button class="btn btn-primary" onclick="saveTemplateContent()">💾 Content Save</button>
         <button class="btn btn-primary" onclick="loadTemplateContent()">↩️ Saved Content Load</button>
         <button class="btn btn-nav" onclick="resetTemplateContent()">🔄 Reset Content</button>
+        <span id="templateSyncStatus" role="status" style="font-size:12px;color:#555;">☁️ Cloud sync checking…</span>
     </div>
     <div class="ctrl-row">
         <button class="btn btn-word" onclick="downloadWordCurrent()">📝 Word (.docx) — இந்த தொழிலாளி</button>
@@ -564,6 +565,9 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 
     <div class="edit-note">
         ✏️ <strong>Content Edit Mode:</strong> இந்த mode ON செய்தால் document-ல் உள்ள wording/content-ஐ நேரடியாக மாற்றலாம். Excel upload, employee selection, amount calculation process அதேபோல வேலை செய்யும். மாற்றிய content-ஐ நிலையாக வைத்திருக்க <strong>Content Save</strong> அழுத்தவும்.
+    </div>
+    <div style="font-size:12px;color:#555;margin:-4px 0 10px;">
+        ☁️ Content Save / Load shared template wording-ஐ எல்லா device-களிலும் sync செய்யும். இந்த public link உள்ளவர்கள் shared wording-ஐ load செய்யலாம்; Save/Reset-க்கு Render sync password தேவை. Excel worker data cloud-க்கு அனுப்பப்படாது.
     </div>
     <div class="worker-bar" id="workerBar" style="display:none;">
         <label>🔢 Employee No தேடு:</label>
@@ -859,37 +863,202 @@ function toggleContentEditMode() {
     if (btn) btn.textContent = contentEditMode ? '✅ Content Edit ON' : '✏️ Content Edit Mode';
 }
 
-function saveTemplateContent() {
-    prepareTemplateEditableElements();
-    const data = getTemplateEditableElements().map((el, i) => ({ index: i, html: el.innerHTML }));
-    localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(data));
-    alert('மாற்றிய content save செய்யப்பட்டது. இனி Excel process இதே content-உடன் வேலை செய்யும்.');
+const TEMPLATE_CLOUD_API_URL = 'https://workers-settlement-sync-api.onrender.com/api/template';
+let templateCloudAvailable = false;
+let templateSyncPassword = '';
+
+function setTemplateSyncStatus(message, color = '#555') {
+    const el = document.getElementById('templateSyncStatus');
+    if (!el) return;
+    el.textContent = message;
+    el.style.color = color;
 }
 
-function loadTemplateContent(silent = false) {
-    const raw = localStorage.getItem(TEMPLATE_STORAGE_KEY);
-    if (!raw) {
-        if (!silent) alert('Saved content இல்லை.');
-        return false;
-    }
-    try {
-        const data = JSON.parse(raw);
-        const els = getTemplateEditableElements();
-        data.forEach(item => {
-            if (els[item.index]) els[item.index].innerHTML = item.html;
+const TEMPLATE_CLOUD_DYNAMIC_DEFAULTS = {
+    t_words: '_____________________________________',
+    t_total2: '________',
+    t_total2_words: '----------------- மட்டும்',
+    bank_ac: '________',
+    pay_date: '-----------------',
+    ag_date: '',
+    r_name: 'XXXXXX',
+    r_amount: '________',
+    r_amount_words: '--------------------------- மட்டும்',
+    r_bank_ac: '________',
+    r_pay_date: '-----------------',
+    rcpt_date: ''
+};
+
+function getCloudSafeTemplateData() {
+    return getTemplateEditableElements().map((el, index) => {
+        const clone = el.cloneNode(true);
+        Object.entries(TEMPLATE_CLOUD_DYNAMIC_DEFAULTS).forEach(([id, placeholder]) => {
+            const field = clone.querySelector('[id="' + id + '"]');
+            if (field) field.textContent = placeholder;
         });
-        prepareTemplateEditableElements();
-        if (!silent) alert('Saved content load செய்யப்பட்டது.');
+        return { index, html: clone.innerHTML };
+    });
+}
+
+function applyTemplateContentData(data, preserveCurrentWorkerFields = false) {
+    if (!Array.isArray(data)) return false;
+    prepareTemplateEditableElements();
+    const els = getTemplateEditableElements();
+    let applied = 0;
+    data.forEach((item, index) => {
+        if (!item || item.index !== index || typeof item.html !== 'string' || !els[index]) return;
+        const incoming = document.createElement('div');
+        incoming.innerHTML = item.html;
+        if (preserveCurrentWorkerFields) {
+            Object.entries(TEMPLATE_CLOUD_DYNAMIC_DEFAULTS).forEach(([id]) => {
+                const incomingField = incoming.querySelector('[id="' + id + '"]');
+                const currentField = els[index].querySelector('[id="' + id + '"]');
+                if (incomingField && currentField) incomingField.innerHTML = currentField.innerHTML;
+            });
+        }
+        els[index].innerHTML = incoming.innerHTML;
+        applied++;
+    });
+    prepareTemplateEditableElements();
+    return applied > 0;
+}
+
+async function fetchCloudTemplate() {
+    try {
+        const response = await fetch(TEMPLATE_CLOUD_API_URL, { method: 'GET', cache: 'no-store' });
+        if (!response.ok) throw new Error('Cloud API returned ' + response.status);
+        const result = await response.json();
+        templateCloudAvailable = true;
+        setTemplateSyncStatus(
+            result.saved ? '☁️ Cloud connected · shared content saved' : '☁️ Cloud connected · no shared save yet',
+            '#287a3e'
+        );
+        return result;
+    } catch (e) {
+        templateCloudAvailable = false;
+        setTemplateSyncStatus('☁️ Cloud unavailable · this device only', '#a65a00');
+        return null;
+    }
+}
+
+function getTemplateSyncPassword() {
+    if (templateSyncPassword) return templateSyncPassword;
+    const value = prompt('Cloud save password-ஐ உள்ளிடவும். Render Dashboard → workers-settlement-sync-api → Environment → TEMPLATE_SYNC_PASSWORD-ல் பார்க்கலாம்.');
+    if (value) templateSyncPassword = value.trim();
+    return templateSyncPassword;
+}
+
+function saveTemplateLocally(data) {
+    try {
+        localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(data));
         return true;
     } catch (e) {
-        if (!silent) alert('Saved content load ஆகவில்லை. Reset செய்து மீண்டும் முயற்சிக்கவும்.');
         return false;
     }
 }
 
-function resetTemplateContent() {
-    if (!confirm('Saved content-ஐ நீக்கி original content-க்கு திரும்ப வேண்டுமா?')) return;
-    localStorage.removeItem(TEMPLATE_STORAGE_KEY);
+async function saveTemplateContent() {
+    prepareTemplateEditableElements();
+    const data = getTemplateEditableElements().map((el, i) => ({ index: i, html: el.innerHTML }));
+    const cloudSafeData = getCloudSafeTemplateData();
+    const localSaved = saveTemplateLocally(data);
+    const cloud = await fetchCloudTemplate();
+
+    if (!cloud) {
+        alert(localSaved
+            ? 'இந்த device-ல் content save செய்யப்பட்டது. Cloud கிடைக்கவில்லை; மற்ற device-ல் இன்னும் load ஆகாது.'
+            : 'Local storage-மும் cloud-மும் கிடைக்கவில்லை.');
+        return;
+    }
+
+    const password = getTemplateSyncPassword();
+    if (!password) {
+        alert(localSaved
+            ? 'இந்த device-ல் மட்டும் save செய்யப்பட்டது. எல்லா device-க்கும் sync செய்ய cloud password தேவை.'
+            : 'Cloud password இல்லாமல் save செய்ய முடியவில்லை.');
+        return;
+    }
+
+    try {
+        const response = await fetch(TEMPLATE_CLOUD_API_URL, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + password
+            },
+            body: JSON.stringify({ data: cloudSafeData })
+        });
+        if (response.status === 401) {
+            templateSyncPassword = '';
+            alert('Cloud password தவறு. இந்த device-ல் save ஆகியிருக்கலாம்; Render Environment-ல் உள்ள password-ஐச் சரிபார்க்கவும்.');
+            return;
+        }
+        if (!response.ok) throw new Error('Cloud save failed (' + response.status + ')');
+        setTemplateSyncStatus('☁️ Shared content saved for all devices', '#287a3e');
+        alert('Content cloud-லும் இந்த device-லும் save செய்யப்பட்டது. அதே link-ஐ மற்ற device-ல் திறந்து Saved Content Load அழுத்தவும்.');
+    } catch (e) {
+        setTemplateSyncStatus('☁️ Cloud save failed · local copy kept', '#a65a00');
+        alert(localSaved
+            ? 'இந்த device-ல் save செய்யப்பட்டது; cloud save ஆகவில்லை. Internet / Render API-ஐச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.'
+            : 'Cloud save ஆகவில்லை. Internet / Render API-ஐச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.');
+    }
+}
+
+async function loadTemplateContent(silent = false) {
+    const cloud = await fetchCloudTemplate();
+    if (cloud && cloud.saved && applyTemplateContentData(cloud.data, true)) {
+        saveTemplateLocally(cloud.data);
+        if (!silent) alert('Cloud-ல் save செய்த shared content load செய்யப்பட்டது.');
+        return true;
+    }
+
+    let raw = null;
+    try { raw = localStorage.getItem(TEMPLATE_STORAGE_KEY); } catch (e) {}
+    if (raw) {
+        try {
+            const data = JSON.parse(raw);
+            if (applyTemplateContentData(data)) {
+                if (cloud && !cloud.saved) {
+                    setTemplateSyncStatus('☁️ Cloud connected · local copy loaded; press Content Save to share', '#a65a00');
+                }
+                if (!silent) alert(cloud
+                    ? 'இந்த device-ல் save செய்த content load செய்யப்பட்டது.'
+                    : 'இந்த device-ல் save செய்த content load செய்யப்பட்டது. Cloud கிடைக்கவில்லை.');
+                return true;
+            }
+        } catch (e) {}
+    }
+
+    if (!silent) alert(cloud ? 'Saved content இல்லை.' : 'Cloud கிடைக்கவில்லை; இந்த device-லும்கூட saved content இல்லை.');
+    return false;
+}
+
+async function resetTemplateContent() {
+    const cloud = await fetchCloudTemplate();
+    if (cloud) {
+        if (!confirm('Shared cloud content-ஐ எல்லா device-களிலிருந்தும் நீக்கி original content-க்கு திரும்பவா?')) return;
+        const password = getTemplateSyncPassword();
+        if (!password) return;
+        try {
+            const response = await fetch(TEMPLATE_CLOUD_API_URL, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + password }
+            });
+            if (response.status === 401) {
+                templateSyncPassword = '';
+                alert('Cloud password தவறு. Shared content நீக்கப்படவில்லை.');
+                return;
+            }
+            if (!response.ok) throw new Error('Cloud reset failed (' + response.status + ')');
+        } catch (e) {
+            alert('Cloud content நீக்கப்படவில்லை. Internet / Render API-ஐச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.');
+            return;
+        }
+    } else if (!confirm('Cloud கிடைக்கவில்லை. இந்த device-ல் உள்ள saved content மட்டும் நீக்கவா?')) {
+        return;
+    }
+
+    try { localStorage.removeItem(TEMPLATE_STORAGE_KEY); } catch (e) {}
     location.reload();
 }
 
