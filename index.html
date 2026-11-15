@@ -29,73 +29,138 @@
     wording.forEach(function (p) { html = html.split(p[0]).join(p[1]); });
 
     // --- Worker block ---
-    const oldBlock = `            <p><span class=\"words-blank\" id=\"w_name\" contenteditable=\"true\"></span></p>\n            <p><span class=\"words-blank\" id=\"w_full_address\" contenteditable=\"true\"></span></p>\n            <p id=\"w_aadhar_row\" style=\"margin-top: 4px;\">\n                <span id=\"w_aadhar_label\"></span> <span class=\"words-blank\" id=\"w_aadhar\" contenteditable=\"true\"></span>\n            </p>\n            <p style=\"margin-top: 4px;\">\n                <span id=\"w_phone_label\"></span> <span class=\"words-blank\" id=\"w_phone\" contenteditable=\"true\"></span>\n            </p>`;
-    const newBlock = `            <p><span class=\"words-blank\" id=\"w_name\" contenteditable=\"true\"></span></p>\n            <p><span class=\"words-blank\" id=\"w_designation\" contenteditable=\"true\">பயிற்சியாளர்</span></p>\n            <p><span class=\"words-blank\" id=\"w_company\" contenteditable=\"true\">திருவள்ளுவர் டெக்ஸ்டைல்ஸ் பிரைவேட் லிமிடெட்</span></p>\n            <p id=\"w_aadhar_row\" style=\"margin-top: 4px;\">\n                <span id=\"w_aadhar_label\"></span> <span class=\"words-blank\" id=\"w_aadhar\" contenteditable=\"true\"></span>\n            </p>\n            <p style=\"margin-top: 4px;\">\n                <span id=\"w_phone_label\"></span> <span class=\"words-blank\" id=\"w_phone\" contenteditable=\"true\"></span>\n            </p>`;
+    const oldBlock = `            <p><span class="words-blank" id="w_name" contenteditable="true"></span></p>
+            <p><span class="words-blank" id="w_full_address" contenteditable="true"></span></p>
+            <p id="w_aadhar_row" style="margin-top: 4px;">
+                <span id="w_aadhar_label"></span> <span class="words-blank" id="w_aadhar" contenteditable="true"></span>
+            </p>
+            <p style="margin-top: 4px;">
+                <span id="w_phone_label"></span> <span class="words-blank" id="w_phone" contenteditable="true"></span>
+            </p>`;
+    const newBlock = `            <p><span class="words-blank" id="w_name" contenteditable="true"></span></p>
+            <p><span class="words-blank" id="w_designation" contenteditable="true">பயிற்சியாளர்</span></p>
+            <p><span class="words-blank" id="w_company" contenteditable="true">திருவள்ளுவர் டெக்ஸ்டைல்ஸ் பிரைவேட் லிமிடெட்</span></p>
+            <p id="w_aadhar_row" style="margin-top: 4px;">
+                <span id="w_aadhar_label"></span> <span class="words-blank" id="w_aadhar" contenteditable="true"></span>
+            </p>
+            <p style="margin-top: 4px;">
+                <span id="w_phone_label"></span> <span class="words-blank" id="w_phone" contenteditable="true"></span>
+            </p>`;
     if (html.indexOf(oldBlock) !== -1) html = html.split(oldBlock).join(newBlock);
 
-    const oldJs = `    // Employee Name (with Emp No) in pure Tamil straight across, Professional Transliterated Address exactly below it\n    if (document.getElementById('w_name')) document.getElementById('w_name').textContent = dispName;\n    if (document.getElementById('w_full_address')) {\n        const taLines = w.addressLines.map(a => englishToTamil(String(a)).replace(/\\s*,\\s*/g, ', ').replace(/[,\\s]+$/, '').trim()).filter(a => a !== '');\n        // drop repeats: same as previous line, or same as the last part of the previous line (\"D.N30, Koneripatty\" -> \"Konerippatty\")\n        const lastPart = (l) => l.split(',').pop().trim();\n        const uniqLines = taLines.filter((l, i) => i === 0 || (l !== taLines[i - 1] && l !== lastPart(taLines[i - 1])));\n        const fullAddrStr = uniqLines.join(', ');\n        document.getElementById('w_full_address').textContent = fullAddrStr;\n    }`;
-    const newJs = `    // Employee Name → பயிற்சியாளர் → Company → Aadhaar / Mobile\n    if (document.getElementById('w_name')) document.getElementById('w_name').textContent = dispName;\n    if (document.getElementById('w_designation')) {\n        document.getElementById('w_designation').textContent = 'பயிற்சியாளர்';\n    }\n    if (document.getElementById('w_company')) {\n        document.getElementById('w_company').textContent = 'திருவள்ளுவர் டெக்ஸ்டைல்ஸ் பிரைவேட் லிமிடெட்';\n    }`;
+    const oldJs = `    // Employee Name (with Emp No) in pure Tamil straight across, Professional Transliterated Address exactly below it
+    if (document.getElementById('w_name')) document.getElementById('w_name').textContent = dispName;
+    if (document.getElementById('w_full_address')) {
+        const taLines = w.addressLines.map(a => englishToTamil(String(a)).replace(/\\s*,\\s*/g, ', ').replace(/[,\\s]+$/, '').trim()).filter(a => a !== '');
+        // drop repeats: same as previous line, or same as the last part of the previous line ("D.N30, Koneripatty" -> "Konerippatty")
+        const lastPart = (l) => l.split(',').pop().trim();
+        const uniqLines = taLines.filter((l, i) => i === 0 || (l !== taLines[i - 1] && l !== lastPart(taLines[i - 1])));
+        const fullAddrStr = uniqLines.join(', ');
+        document.getElementById('w_full_address').textContent = fullAddrStr;
+    }`;
+    const newJs = `    // Employee Name → பயிற்சியாளர் → Company → Aadhaar / Mobile
+    if (document.getElementById('w_name')) document.getElementById('w_name').textContent = dispName;
+    if (document.getElementById('w_designation')) {
+        document.getElementById('w_designation').textContent = 'பயிற்சியாளர்';
+    }
+    if (document.getElementById('w_company')) {
+        document.getElementById('w_company').textContent = 'திருவள்ளுவர் டெக்ஸ்டைல்ஸ் பிரைவேட் லிமிடெட்';
+    }`;
     if (html.indexOf(oldJs) !== -1) html = html.split(oldJs).join(newJs);
 
     // Bank A/c = 30 underscores only (no hyphen). Payment date = underscores only (no hyphen).
     const BLANK_BANK = '______________________________'; // 30
     const BLANK_DATE = '_______________'; // underscores only, no -----
 
-    html = html.split('class=\"blank blank-wrap\" id=\"bank_ac\"').join(
-      'class=\"blank blank-wrap\" id=\"bank_ac\" style=\"white-space:nowrap;font-weight:normal;display:inline\"');
-    html = html.split('class=\"blank blank-wrap\" id=\"r_bank_ac\"').join(
-      'class=\"blank blank-wrap\" id=\"r_bank_ac\" style=\"white-space:nowrap;font-weight:normal;display:inline\"');
+    html = html.split('class="blank blank-wrap" id="bank_ac"').join(
+      'class="blank blank-wrap" id="bank_ac" style="white-space:nowrap;font-weight:normal;display:inline"');
+    html = html.split('class="blank blank-wrap" id="r_bank_ac"').join(
+      'class="blank blank-wrap" id="r_bank_ac" style="white-space:nowrap;font-weight:normal;display:inline"');
 
-    html = html.replace(/id=\"bank_ac\" contenteditable=\"true\">[_-]{3,}/g, 'id=\"bank_ac\" contenteditable=\"true\">' + BLANK_BANK);
-    html = html.replace(/id=\"r_bank_ac\" contenteditable=\"true\">[_-]{3,}/g, 'id=\"r_bank_ac\" contenteditable=\"true\">' + BLANK_BANK);
+    html = html.replace(/id="bank_ac" contenteditable="true">[_-]{3,}/g, 'id="bank_ac" contenteditable="true">' + BLANK_BANK);
+    html = html.replace(/id="r_bank_ac" contenteditable="true">[_-]{3,}/g, 'id="r_bank_ac" contenteditable="true">' + BLANK_BANK);
 
     // Payment date: remove bold + underscores only
-    html = html.split('class=\"words-blank\" id=\"pay_date\"').join(
-      'class=\"words-blank\" id=\"pay_date\" style=\"font-weight:normal\"');
-    html = html.split('class=\"words-blank\" id=\"r_pay_date\"').join(
-      'class=\"words-blank\" id=\"r_pay_date\" style=\"font-weight:normal\"');
+    html = html.split('class="words-blank" id="pay_date"').join(
+      'class="words-blank" id="pay_date" style="font-weight:normal"');
+    html = html.split('class="words-blank" id="r_pay_date"').join(
+      'class="words-blank" id="r_pay_date" style="font-weight:normal"');
 
-    html = html.replace(/id=\"pay_date\" contenteditable=\"true\">[_-]{3,}/g, 'id=\"pay_date\" contenteditable=\"true\">' + BLANK_DATE);
-    html = html.replace(/id=\"r_pay_date\" contenteditable=\"true\">[_-]{3,}/g, 'id=\"r_pay_date\" contenteditable=\"true\">' + BLANK_DATE);
-    html = html.replace(/id=\"ag_date\" contenteditable=\"true\">[_-]*/g, 'id=\"ag_date\" contenteditable=\"true\">' + BLANK_DATE);
+    html = html.replace(/id="pay_date" contenteditable="true">[_-]{3,}/g, 'id="pay_date" contenteditable="true">' + BLANK_DATE);
+    html = html.replace(/id="r_pay_date" contenteditable="true">[_-]{3,}/g, 'id="r_pay_date" contenteditable="true">' + BLANK_DATE);
+    html = html.replace(/id="ag_date" contenteditable="true">[_-]*/g, 'id="ag_date" contenteditable="true">' + BLANK_DATE);
 
-    const oldBankFill = \"['bank_ac', 'r_bank_ac'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = bankDisp; });\";
-    const newBankFill = \"['bank_ac', 'r_bank_ac'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '______________________________'; });\";
+    const oldBankFill = "['bank_ac', 'r_bank_ac'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = bankDisp; });";
+    const newBankFill = "['bank_ac', 'r_bank_ac'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '______________________________'; });";
     if (html.indexOf(oldBankFill) !== -1) html = html.split(oldBankFill).join(newBankFill);
 
-    const oldPayFill = \"['pay_date', 'r_pay_date'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = payDateDisp; });\";
-    const newPayFill = \"['pay_date', 'r_pay_date'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '_______________'; });\";
+    const oldPayFill = "['pay_date', 'r_pay_date'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = payDateDisp; });";
+    const newPayFill = "['pay_date', 'r_pay_date'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '_______________'; });";
     if (html.indexOf(oldPayFill) !== -1) html = html.split(oldPayFill).join(newPayFill);
 
-    const oldAg = \"if (document.getElementById('ag_date')) document.getElementById('ag_date').textContent = eff.agDate;\";
-    const newAg = \"if (document.getElementById('ag_date')) document.getElementById('ag_date').textContent = '_______________';\";
+    const oldAg = "if (document.getElementById('ag_date')) document.getElementById('ag_date').textContent = eff.agDate;";
+    const newAg = "if (document.getElementById('ag_date')) document.getElementById('ag_date').textContent = '_______________';";
     if (html.indexOf(oldAg) !== -1) html = html.split(oldAg).join(newAg);
 
     // சாட்சிகள் blank space
-    const oldWit = `        <h4>சாட்சிகள்:-</h4>\n        <p>1) <span class=\"words-blank\" id=\"wit1\" contenteditable=\"true\"></span></p>\n        <p>2) <span class=\"words-blank\" id=\"wit2\" contenteditable=\"true\"></span></p>`;
-    const newWit = `        <h4>சாட்சிகள்:-</h4>\n        <p style=\"margin:0 0 2px 0;\">1)</p>\n        <p style=\"min-height:3.2em;margin:0 0 8px 0;\">&nbsp;</p>\n        <p style=\"min-height:1.2em;margin:0 0 8px 0;\">&nbsp;</p>\n        <p style=\"min-height:1.2em;margin:0 0 12px 0;\">&nbsp;</p>\n        <p style=\"margin:0 0 2px 0;\">2)</p>\n        <p style=\"min-height:3.2em;margin:0 0 8px 0;\">&nbsp;</p>\n        <p style=\"min-height:1.2em;margin:0 0 8px 0;\">&nbsp;</p>\n        <p style=\"min-height:1.2em;margin:0 0 12px 0;\">&nbsp;</p>\n        <span id=\"wit1\" style=\"display:none;\"></span>\n        <span id=\"wit2\" style=\"display:none;\"></span>`;
+    const oldWit = `        <h4>சாட்சிகள்:-</h4>
+        <p>1) <span class="words-blank" id="wit1" contenteditable="true"></span></p>
+        <p>2) <span class="words-blank" id="wit2" contenteditable="true"></span></p>`;
+    const newWit = `        <h4>சாட்சிகள்:-</h4>
+        <p style="margin:0 0 2px 0;">1)</p>
+        <p style="min-height:3.2em;margin:0 0 8px 0;">&nbsp;</p>
+        <p style="min-height:1.2em;margin:0 0 8px 0;">&nbsp;</p>
+        <p style="min-height:1.2em;margin:0 0 12px 0;">&nbsp;</p>
+        <p style="margin:0 0 2px 0;">2)</p>
+        <p style="min-height:3.2em;margin:0 0 8px 0;">&nbsp;</p>
+        <p style="min-height:1.2em;margin:0 0 8px 0;">&nbsp;</p>
+        <p style="min-height:1.2em;margin:0 0 12px 0;">&nbsp;</p>
+        <span id="wit1" style="display:none;"></span>
+        <span id="wit2" style="display:none;"></span>`;
     if (html.indexOf(oldWit) !== -1) html = html.split(oldWit).join(newWit);
 
-    const oldWitFill = `    // Witnesses\n    if (document.getElementById('wit1')) document.getElementById('wit1').textContent = eff.wit1;\n    if (document.getElementById('wit2')) document.getElementById('wit2').textContent = eff.wit2;`;
-    const newWitFill = `    // Witnesses blank for handwriting\n    if (document.getElementById('wit1')) document.getElementById('wit1').textContent = '';\n    if (document.getElementById('wit2')) document.getElementById('wit2').textContent = '';`;
+    const oldWitFill = `    // Witnesses
+    if (document.getElementById('wit1')) document.getElementById('wit1').textContent = eff.wit1;
+    if (document.getElementById('wit2')) document.getElementById('wit2').textContent = eff.wit2;`;
+    const newWitFill = `    // Witnesses blank for handwriting
+    if (document.getElementById('wit1')) document.getElementById('wit1').textContent = '';
+    if (document.getElementById('wit2')) document.getElementById('wit2').textContent = '';`;
     if (html.indexOf(oldWitFill) !== -1) html = html.split(oldWitFill).join(newWitFill);
 
     // Aadhaar / Mobile: empty or 0 → blank (never show 0)
-    const oldPhoneFill = `if (document.getElementById('w_phone_label')) document.getElementById('w_phone_label').textContent = w.phone ? 'கைபேசி எண் :' : '';\n    if (document.getElementById('w_phone')) document.getElementById('w_phone').textContent = w.phone || '';\n    const showAd = isAadharShown() && !!w.aadhar;\n    if (document.getElementById('w_aadhar_row')) document.getElementById('w_aadhar_row').style.display = showAd ? '' : 'none';\n    if (document.getElementById('w_aadhar_label')) document.getElementById('w_aadhar_label').textContent = showAd ? 'ஆதார் எண் :' : '';\n    if (document.getElementById('w_aadhar')) document.getElementById('w_aadhar').textContent = showAd ? w.aadhar : '';`;
-    const newPhoneFill = `const _blankOr = (v) => {\n      if (v === null || v === undefined) return '';\n      const s = String(v).trim();\n      if (!s || s === '0' || s === '0.0' || /^0+$/.test(s)) return '';\n      return s;\n    };\n    const phoneVal = _blankOr(w.phone);\n    const aadharVal = _blankOr(w.aadhar);\n    if (document.getElementById('w_phone_label')) document.getElementById('w_phone_label').textContent = phoneVal ? 'கைபேசி எண் :' : '';\n    if (document.getElementById('w_phone')) document.getElementById('w_phone').textContent = phoneVal;\n    const showAd = isAadharShown() && !!aadharVal;\n    if (document.getElementById('w_aadhar_row')) document.getElementById('w_aadhar_row').style.display = showAd ? '' : 'none';\n    if (document.getElementById('w_aadhar_label')) document.getElementById('w_aadhar_label').textContent = showAd ? 'ஆதார் எண் :' : '';\n    if (document.getElementById('w_aadhar')) document.getElementById('w_aadhar').textContent = showAd ? aadharVal : '';`;
+    const oldPhoneFill = `if (document.getElementById('w_phone_label')) document.getElementById('w_phone_label').textContent = w.phone ? 'கைபேசி எண் :' : '';
+    if (document.getElementById('w_phone')) document.getElementById('w_phone').textContent = w.phone || '';
+    const showAd = isAadharShown() && !!w.aadhar;
+    if (document.getElementById('w_aadhar_row')) document.getElementById('w_aadhar_row').style.display = showAd ? '' : 'none';
+    if (document.getElementById('w_aadhar_label')) document.getElementById('w_aadhar_label').textContent = showAd ? 'ஆதார் எண் :' : '';
+    if (document.getElementById('w_aadhar')) document.getElementById('w_aadhar').textContent = showAd ? w.aadhar : '';`;
+    const newPhoneFill = `const _blankOr = (v) => {
+      if (v === null || v === undefined) return '';
+      const s = String(v).trim();
+      if (!s || s === '0' || s === '0.0' || /^0+$/.test(s)) return '';
+      return s;
+    };
+    const phoneVal = _blankOr(w.phone);
+    const aadharVal = _blankOr(w.aadhar);
+    if (document.getElementById('w_phone_label')) document.getElementById('w_phone_label').textContent = phoneVal ? 'கைபேசி எண் :' : '';
+    if (document.getElementById('w_phone')) document.getElementById('w_phone').textContent = phoneVal;
+    const showAd = isAadharShown() && !!aadharVal;
+    if (document.getElementById('w_aadhar_row')) document.getElementById('w_aadhar_row').style.display = showAd ? '' : 'none';
+    if (document.getElementById('w_aadhar_label')) document.getElementById('w_aadhar_label').textContent = showAd ? 'ஆதார் எண் :' : '';
+    if (document.getElementById('w_aadhar')) document.getElementById('w_aadhar').textContent = showAd ? aadharVal : '';`;
     if (html.indexOf(oldPhoneFill) !== -1) html = html.split(oldPhoneFill).join(newPhoneFill);
 
     document.open();
     document.write(html);
     document.close();
   } catch (e) {
-    document.body.innerHTML = '<p style=\"font-family:sans-serif;padding:40px\">Load failed: ' + e.message +
-      '</p><p><a href=\"Worker_Settlement_Corrected.html\">Open classic version</a></p>';
+    document.body.innerHTML = '<p style="font-family:sans-serif;padding:40px">Load failed: ' + e.message +
+      '</p><p><a href="Worker_Settlement_Corrected.html">Open classic version</a></p>';
   }
 })();
 </script>
 </head>
 <body>
-<p style=\"font-family:Latha,Arial,sans-serif;text-align:center;margin-top:40px\">Loading…</p>
+<p style="font-family:Latha,Arial,sans-serif;text-align:center;margin-top:40px">Loading…</p>
 </body>
 </html>
