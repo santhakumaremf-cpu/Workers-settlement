@@ -65,36 +65,32 @@
     }`;
     if (html.indexOf(oldJs) !== -1) html = html.split(oldJs).join(newJs);
 
-    // Bank: single-line underscores only (no wrap, not bold)
-    const BLANK_BANK = '__________________';
-    const BLANK_DATE = '_______________';
+    // Bank A/c = 30 underscores only (no hyphen). Payment date = underscores only (no hyphen).
+    const BLANK_BANK = '______________________________'; // 30
+    const BLANK_DATE = '_______________'; // underscores only, no -----
 
     html = html.split('class="blank blank-wrap" id="bank_ac"').join(
       'class="blank blank-wrap" id="bank_ac" style="white-space:nowrap;font-weight:normal;display:inline"');
     html = html.split('class="blank blank-wrap" id="r_bank_ac"').join(
       'class="blank blank-wrap" id="r_bank_ac" style="white-space:nowrap;font-weight:normal;display:inline"');
 
-    html = html.split('id="bank_ac" contenteditable="true">________').join(
-      'id="bank_ac" contenteditable="true">' + BLANK_BANK);
-    html = html.split('id="r_bank_ac" contenteditable="true">________').join(
-      'id="r_bank_ac" contenteditable="true">' + BLANK_BANK);
+    // Replace any existing bank defaults
+    html = html.replace(/id="bank_ac" contenteditable="true">[_-]{3,}/g, 'id="bank_ac" contenteditable="true">' + BLANK_BANK);
+    html = html.replace(/id="r_bank_ac" contenteditable="true">[_-]{3,}/g, 'id="r_bank_ac" contenteditable="true">' + BLANK_BANK);
 
-    // Payment date: not bold
+    // Payment date: remove bold + underscores only (no hyphen dashes)
     html = html.split('class="words-blank" id="pay_date"').join(
       'class="words-blank" id="pay_date" style="font-weight:normal"');
     html = html.split('class="words-blank" id="r_pay_date"').join(
       'class="words-blank" id="r_pay_date" style="font-weight:normal"');
 
-    html = html.split('id="pay_date" contenteditable="true">-----------------').join(
-      'id="pay_date" contenteditable="true">' + BLANK_DATE);
-    html = html.split('id="r_pay_date" contenteditable="true">-----------------').join(
-      'id="r_pay_date" contenteditable="true">' + BLANK_DATE);
-    html = html.split('id="ag_date" contenteditable="true">').join(
-      'id="ag_date" contenteditable="true">' + BLANK_DATE);
+    html = html.replace(/id="pay_date" contenteditable="true">[_-]{3,}/g, 'id="pay_date" contenteditable="true">' + BLANK_DATE);
+    html = html.replace(/id="r_pay_date" contenteditable="true">[_-]{3,}/g, 'id="r_pay_date" contenteditable="true">' + BLANK_DATE);
+    html = html.replace(/id="ag_date" contenteditable="true">[_-]*/g, 'id="ag_date" contenteditable="true">' + BLANK_DATE);
 
-    // Force blanks (no Excel auto-fill)
+    // Force blanks on selectWorker (no Excel fill, underscores only)
     const oldBankFill = "['bank_ac', 'r_bank_ac'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = bankDisp; });";
-    const newBankFill = "['bank_ac', 'r_bank_ac'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '__________________'; });";
+    const newBankFill = "['bank_ac', 'r_bank_ac'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '______________________________'; });";
     if (html.indexOf(oldBankFill) !== -1) html = html.split(oldBankFill).join(newBankFill);
 
     const oldPayFill = "['pay_date', 'r_pay_date'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = payDateDisp; });";
