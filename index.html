@@ -67,8 +67,8 @@
     if (html.indexOf(oldJs) !== -1) html = html.split(oldJs).join(newJs);
 
     // --- Bank A/c (25 underscores), Payment date, Sign date = manual blanks ---
-    const BLANK_BANK = '_________________________';  // 25 chars
-    const BLANK_DATE = '____________________';     // 20 chars for handwritten date
+    const BLANK_BANK = '_________________________';
+    const BLANK_DATE = '____________________';
 
     html = html.split('id="bank_ac" contenteditable="true">________').join(
       'id="bank_ac" contenteditable="true">' + BLANK_BANK);
@@ -81,7 +81,6 @@
     html = html.split('id="ag_date" contenteditable="true">').join(
       'id="ag_date" contenteditable="true">' + BLANK_DATE);
 
-    // Force JS not to auto-fill bank / payment date / agreement date from Excel
     const oldBankFill = "['bank_ac', 'r_bank_ac'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = bankDisp; });";
     const newBankFill = "['bank_ac', 'r_bank_ac'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '_________________________'; });";
     if (html.indexOf(oldBankFill) !== -1) html = html.split(oldBankFill).join(newBankFill);
@@ -93,6 +92,17 @@
     const oldAg = "if (document.getElementById('ag_date')) document.getElementById('ag_date').textContent = eff.agDate;";
     const newAg = "if (document.getElementById('ag_date')) document.getElementById('ag_date').textContent = '____________________';";
     if (html.indexOf(oldAg) !== -1) html = html.split(oldAg).join(newAg);
+
+    // --- சாட்சிகள் 1 & 2: 3 line space for handwriting ---
+    const oldWit = `        <h4>சாட்சிகள்:-</h4>
+        <p>1) <span class="words-blank" id="wit1" contenteditable="true"></span></p>
+        <p>2) <span class="words-blank" id="wit2" contenteditable="true"></span></p>`;
+    const newWit = `        <h4>சாட்சிகள்:-</h4>
+        <p style="min-height:4.5em;line-height:1.5;margin-bottom:0;">1) <span class="words-blank" id="wit1" contenteditable="true">____________________</span></p>
+        <p style="height:2.5em;margin:0;"></p>
+        <p style="min-height:4.5em;line-height:1.5;margin-bottom:0;">2) <span class="words-blank" id="wit2" contenteditable="true">____________________</span></p>
+        <p style="height:2.5em;margin:0;"></p>`;
+    if (html.indexOf(oldWit) !== -1) html = html.split(oldWit).join(newWit);
 
     document.open();
     document.write(html);
