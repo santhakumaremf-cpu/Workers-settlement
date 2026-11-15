@@ -2,12 +2,38 @@
 <html lang="ta">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0;url=Worker_Settlement_Corrected.html">
 <title>Worker Settlement</title>
-<script>location.replace('Worker_Settlement_Corrected.html');</script>
+<script>
+// Load full app then apply PDF wording (Sakthivel R settlement PDF)
+(async function () {
+  try {
+    const res = await fetch('Worker_Settlement_Corrected.html', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    let html = await res.text();
+    const pairs = [
+      ['நிர்வாகத்தின் சார்பில் ஆஜரான</p>\n            <p>பிரதிநிதிகள்</p>',
+       'நிர்வாகத்தின் அதிகாரப்பூர்வ</p>\n            <p>பிரதிநிதிகள்</p>'],
+      ['மேற்கூறிய நிர்வாகம், இராசிபுரத்தில்', 'மேற்படி நிர்வாகம், இராசிபுரத்தில்'],
+      ['தொழிலாளர்கள் தொழிலாளர் துறையில் (ACL) பணிநிறுத்தம்',
+       'தொழிலாளர்கள் சேலம் தொழிலாளர் நலத் துறையில் (ACL) பணிநிறுத்தம்'],
+      ['பல சுற்றுப் பேச்சுவார்த்தைகள் 21/10/2025',
+       'பல சுற்றுப் பேச்சுவார்த்தைகள் முறையே 21/10/2025'],
+      ['பணிப்பயன்களை வழங்குமாறும்', 'பணிப்பயன்களை தகுதி உள்ள தொழிலாளர்களுக்கு வழங்குமாறும்'],
+      ['அளிக்கப்பட்ட தீர்ப்புகள் மீது எவ்வித',
+       'அளிக்கப்பட்ட தீர்ப்புகள் முறையே 11.11.25 மற்றும் 22.09.25 மீது எவ்வித']
+    ];
+    pairs.forEach(function (p) { html = html.split(p[0]).join(p[1]); });
+    document.open();
+    document.write(html);
+    document.close();
+  } catch (e) {
+    document.body.innerHTML = '<p style="font-family:sans-serif;padding:40px">Load failed: ' + e.message +
+      '</p><p><a href="Worker_Settlement_Corrected.html">Open classic version</a></p>';
+  }
+})();
+</script>
 </head>
 <body>
-<p>Opening <a href="Worker_Settlement_Corrected.html">Worker Settlement</a>…</p>
-<p style="margin-top:24px;font-size:14px;color:#555;">Multi-sheet version: download <code>index_multi_sheet.html</code> from artifacts and replace this file on GitHub.</p>
+<p style="font-family:Latha,Arial,sans-serif;text-align:center;margin-top:40px">Loading…</p>
 </body>
 </html>
