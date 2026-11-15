@@ -43,11 +43,9 @@
             <p style="margin-top: 4px;">
                 <span id="w_phone_label"></span> <span class="words-blank" id="w_phone" contenteditable="true"></span>
             </p>`;
-    if (html.indexOf(oldBlock) !== -1) {
-      html = html.split(oldBlock).join(newBlock);
-    }
+    if (html.indexOf(oldBlock) !== -1) html = html.split(oldBlock).join(newBlock);
 
-    // --- selectWorker JS: fill designation + company instead of address ---
+    // --- selectWorker JS: designation + company ---
     const oldJs = `    // Employee Name (with Emp No) in pure Tamil straight across, Professional Transliterated Address exactly below it
     if (document.getElementById('w_name')) document.getElementById('w_name').textContent = dispName;
     if (document.getElementById('w_full_address')) {
@@ -66,9 +64,35 @@
     if (document.getElementById('w_company')) {
         document.getElementById('w_company').textContent = 'திருவள்ளுவர் டெக்ஸ்டைல்ஸ் பிரைவேட் லிமிடெட்';
     }`;
-    if (html.indexOf(oldJs) !== -1) {
-      html = html.split(oldJs).join(newJs);
-    }
+    if (html.indexOf(oldJs) !== -1) html = html.split(oldJs).join(newJs);
+
+    // --- Bank A/c (25 underscores), Payment date, Sign date = manual blanks ---
+    const BLANK_BANK = '_________________________';  // 25 chars
+    const BLANK_DATE = '____________________';     // 20 chars for handwritten date
+
+    html = html.split('id="bank_ac" contenteditable="true">________').join(
+      'id="bank_ac" contenteditable="true">' + BLANK_BANK);
+    html = html.split('id="r_bank_ac" contenteditable="true">________').join(
+      'id="r_bank_ac" contenteditable="true">' + BLANK_BANK);
+    html = html.split('id="pay_date" contenteditable="true">-----------------').join(
+      'id="pay_date" contenteditable="true">' + BLANK_DATE);
+    html = html.split('id="r_pay_date" contenteditable="true">-----------------').join(
+      'id="r_pay_date" contenteditable="true">' + BLANK_DATE);
+    html = html.split('id="ag_date" contenteditable="true">').join(
+      'id="ag_date" contenteditable="true">' + BLANK_DATE);
+
+    // Force JS not to auto-fill bank / payment date / agreement date from Excel
+    const oldBankFill = "['bank_ac', 'r_bank_ac'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = bankDisp; });";
+    const newBankFill = "['bank_ac', 'r_bank_ac'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '_________________________'; });";
+    if (html.indexOf(oldBankFill) !== -1) html = html.split(oldBankFill).join(newBankFill);
+
+    const oldPayFill = "['pay_date', 'r_pay_date'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = payDateDisp; });";
+    const newPayFill = "['pay_date', 'r_pay_date'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '____________________'; });";
+    if (html.indexOf(oldPayFill) !== -1) html = html.split(oldPayFill).join(newPayFill);
+
+    const oldAg = "if (document.getElementById('ag_date')) document.getElementById('ag_date').textContent = eff.agDate;";
+    const newAg = "if (document.getElementById('ag_date')) document.getElementById('ag_date').textContent = '____________________';";
+    if (html.indexOf(oldAg) !== -1) html = html.split(oldAg).join(newAg);
 
     document.open();
     document.write(html);
