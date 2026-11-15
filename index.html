@@ -4,13 +4,14 @@
 <meta charset="UTF-8">
 <title>Worker Settlement</title>
 <script>
-// Load full app then apply PDF wording (Sakthivel R settlement PDF)
 (async function () {
   try {
     const res = await fetch('Worker_Settlement_Corrected.html', { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     let html = await res.text();
-    const pairs = [
+
+    // --- PDF wording ---
+    const wording = [
       ['நிர்வாகத்தின் சார்பில் ஆஜரான</p>\n            <p>பிரதிநிதிகள்</p>',
        'நிர்வாகத்தின் அதிகாரப்பூர்வ</p>\n            <p>பிரதிநிதிகள்</p>'],
       ['மேற்கூறிய நிர்வாகம், இராசிபுரத்தில்', 'மேற்படி நிர்வாகம், இராசிபுரத்தில்'],
@@ -22,7 +23,53 @@
       ['அளிக்கப்பட்ட தீர்ப்புகள் மீது எவ்வித',
        'அளிக்கப்பட்ட தீர்ப்புகள் முறையே 11.11.25 மற்றும் 22.09.25 மீது எவ்வித']
     ];
-    pairs.forEach(function (p) { html = html.split(p[0]).join(p[1]); });
+    wording.forEach(function (p) { html = html.split(p[0]).join(p[1]); });
+
+    // --- Worker block: Name → பயிற்சியாளர் → Company → Aadhaar → Mobile ---
+    const oldBlock = `            <p><span class="words-blank" id="w_name" contenteditable="true"></span></p>
+            <p><span class="words-blank" id="w_full_address" contenteditable="true"></span></p>
+            <p id="w_aadhar_row" style="margin-top: 4px;">
+                <span id="w_aadhar_label"></span> <span class="words-blank" id="w_aadhar" contenteditable="true"></span>
+            </p>
+            <p style="margin-top: 4px;">
+                <span id="w_phone_label"></span> <span class="words-blank" id="w_phone" contenteditable="true"></span>
+            </p>`;
+    const newBlock = `            <p><span class="words-blank" id="w_name" contenteditable="true"></span></p>
+            <p><span class="words-blank" id="w_designation" contenteditable="true">பயிற்சியாளர்</span></p>
+            <p><span class="words-blank" id="w_company" contenteditable="true">திருவள்ளுவர் டெக்ஸ்டைல்ஸ் பிரைவேட் லிமிடெட்</span></p>
+            <p id="w_aadhar_row" style="margin-top: 4px;">
+                <span id="w_aadhar_label"></span> <span class="words-blank" id="w_aadhar" contenteditable="true"></span>
+            </p>
+            <p style="margin-top: 4px;">
+                <span id="w_phone_label"></span> <span class="words-blank" id="w_phone" contenteditable="true"></span>
+            </p>`;
+    if (html.indexOf(oldBlock) !== -1) {
+      html = html.split(oldBlock).join(newBlock);
+    }
+
+    // --- selectWorker JS: fill designation + company instead of address ---
+    const oldJs = `    // Employee Name (with Emp No) in pure Tamil straight across, Professional Transliterated Address exactly below it
+    if (document.getElementById('w_name')) document.getElementById('w_name').textContent = dispName;
+    if (document.getElementById('w_full_address')) {
+        const taLines = w.addressLines.map(a => englishToTamil(String(a)).replace(/\\s*,\\s*/g, ', ').replace(/[,\\s]+$/, '').trim()).filter(a => a !== '');
+        // drop repeats: same as previous line, or same as the last part of the previous line ("D.N30, Koneripatty" -> "Konerippatty")
+        const lastPart = (l) => l.split(',').pop().trim();
+        const uniqLines = taLines.filter((l, i) => i === 0 || (l !== taLines[i - 1] && l !== lastPart(taLines[i - 1])));
+        const fullAddrStr = uniqLines.join(', ');
+        document.getElementById('w_full_address').textContent = fullAddrStr;
+    }`;
+    const newJs = `    // Employee Name → பயிற்சியாளர் → Company → Aadhaar / Mobile
+    if (document.getElementById('w_name')) document.getElementById('w_name').textContent = dispName;
+    if (document.getElementById('w_designation')) {
+        document.getElementById('w_designation').textContent = 'பயிற்சியாளர்';
+    }
+    if (document.getElementById('w_company')) {
+        document.getElementById('w_company').textContent = 'திருவள்ளுவர் டெக்ஸ்டைல்ஸ் பிரைவேட் லிமிடெட்';
+    }`;
+    if (html.indexOf(oldJs) !== -1) {
+      html = html.split(oldJs).join(newJs);
+    }
+
     document.open();
     document.write(html);
     document.close();
