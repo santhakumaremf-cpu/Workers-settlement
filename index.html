@@ -93,16 +93,31 @@
     const newAg = "if (document.getElementById('ag_date')) document.getElementById('ag_date').textContent = '____________________';";
     if (html.indexOf(oldAg) !== -1) html = html.split(oldAg).join(newAg);
 
-    // --- சாட்சிகள் 1 & 2: 3 line space for handwriting ---
+    // --- சாட்சிகள் 1 & 2: 3 line blank space (PDF style, no auto text) ---
     const oldWit = `        <h4>சாட்சிகள்:-</h4>
         <p>1) <span class="words-blank" id="wit1" contenteditable="true"></span></p>
         <p>2) <span class="words-blank" id="wit2" contenteditable="true"></span></p>`;
     const newWit = `        <h4>சாட்சிகள்:-</h4>
-        <p style="min-height:4.5em;line-height:1.5;margin-bottom:0;">1) <span class="words-blank" id="wit1" contenteditable="true">____________________</span></p>
-        <p style="height:2.5em;margin:0;"></p>
-        <p style="min-height:4.5em;line-height:1.5;margin-bottom:0;">2) <span class="words-blank" id="wit2" contenteditable="true">____________________</span></p>
-        <p style="height:2.5em;margin:0;"></p>`;
+        <p style="margin:0 0 2px 0;">1)</p>
+        <p style="min-height:3.2em;margin:0 0 8px 0;border-bottom:none;" id="wit1_space">&nbsp;</p>
+        <p style="min-height:1.2em;margin:0 0 8px 0;">&nbsp;</p>
+        <p style="min-height:1.2em;margin:0 0 12px 0;">&nbsp;</p>
+        <p style="margin:0 0 2px 0;">2)</p>
+        <p style="min-height:3.2em;margin:0 0 8px 0;">&nbsp;</p>
+        <p style="min-height:1.2em;margin:0 0 8px 0;">&nbsp;</p>
+        <p style="min-height:1.2em;margin:0 0 12px 0;">&nbsp;</p>
+        <span id="wit1" style="display:none;"></span>
+        <span id="wit2" style="display:none;"></span>`;
     if (html.indexOf(oldWit) !== -1) html = html.split(oldWit).join(newWit);
+
+    // Do not auto-fill witness names (manual handwriting on print/PDF)
+    const oldWitFill = `    // Witnesses
+    if (document.getElementById('wit1')) document.getElementById('wit1').textContent = eff.wit1;
+    if (document.getElementById('wit2')) document.getElementById('wit2').textContent = eff.wit2;`;
+    const newWitFill = `    // Witnesses — left blank for handwritten names/signatures on print/PDF
+    if (document.getElementById('wit1')) document.getElementById('wit1').textContent = '';
+    if (document.getElementById('wit2')) document.getElementById('wit2').textContent = '';`;
+    if (html.indexOf(oldWitFill) !== -1) html = html.split(oldWitFill).join(newWitFill);
 
     document.open();
     document.write(html);
